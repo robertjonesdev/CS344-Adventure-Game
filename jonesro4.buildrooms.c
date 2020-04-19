@@ -29,7 +29,7 @@ int IsSameRoom( struct Room Rooms[], int x, int y );
 void CreateDirectory(char* directoryName);
 int GetRandomRoom();
 void WriteRoomsToFiles(struct Room Rooms[]);
-
+void InitRooms(struct Room Rooms[]);
 
 
 int main()
@@ -37,6 +37,7 @@ int main()
 	srand(time(NULL));
 
 	struct Room Rooms[NUM_ROOMS];
+	InitRooms(Rooms);
 
 	const char *roomnames[10];
 	roomnames[0] = "NewHaven";
@@ -84,6 +85,21 @@ int main()
 	return 0;
 }
 
+
+void InitRooms(struct Room Rooms[])
+{
+	int i;
+	for (i = 0; i < NUM_ROOMS; i++)
+	{
+		memset(Rooms[i].name,'\0', sizeof(Rooms[i].name) );
+		memset(Rooms[i].roomtype, '\0', sizeof(Rooms[i].roomtype) );
+		int j;
+		for (j = 0; j < NUM_CONS; j++)
+		{
+			memset( Rooms[i].connection[j], '\0', sizeof(Rooms[i].connection[j] ) );
+		}
+	}
+}
 
 void WriteRoomsToFiles(struct Room Rooms[]) {
 	/* Create Directory for room files /jonesro4.rooms.PID/ */

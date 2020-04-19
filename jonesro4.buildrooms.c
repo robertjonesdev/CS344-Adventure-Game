@@ -8,27 +8,24 @@
 #include <time.h>
 
 #define NUM_ROOMS 7
+#define NUM_CONS 6
 
 struct Room {
 	char name[9];
-	char con1[9];
-	char con2[9];
-	char con3[9];
-	char con4[9];
-	char con5[9];
-	char con6[9];
+	char connection[NUM_CONS][9];
 	char roomtype[11];
 };
 
-int IsGraphFull(struct Room[]);
-void AddRandomConnection();
-int CanAddConnectionFrom(struct Room x);
-int ConnectionAlreadyExists(struct Room x, struct Room y);
-void ConnectRoom( struct Room x, struct Room y );
-int IsSameRoom( struct Room x, struct Room y );
+int IsGraphFull(struct Room Rooms[]);
+void AddRandomConnection(struct Room Rooms[]);
+void AddRoomTypes(struct Room Rooms[]);
+int CanAddConnectionFrom(struct Room Rooms[], int x);
+int ConnectionAlreadyExists(struct Room Rooms[], int x, int y);
+void ConnectRoom( struct Room Rooms[], int x, int y );
+int IsSameRoom( struct Room Rooms[], int x, int y );
 void CreateDirectory(char* directoryName);
-void PrintRooms(struct Room[]);
-
+int GetRandomRoom();
+void WriteRoomsToFiles(struct Room Rooms[]);
 
 int main()
 {
@@ -60,56 +57,42 @@ int main()
 		}
 		usedRoomNames[rndRoomName] = 1;
 		strcpy(Rooms[i].name,roomnames[rndRoomName]);	
-		strcpy(Rooms[i].con1, "");
-		strcpy(Rooms[i].con2, "");
-		strcpy(Rooms[i].con3, "");
-		strcpy(Rooms[i].con4, "");
-		strcpy(Rooms[i].con5, "");
-		strcpy(Rooms[i].con6, "");	
+		int j;
+		for (j = 0; j < NUM_CONS; j++)
+		{
+			strcpy(Rooms[i].connection[j], "");
+		}
 		strcpy(Rooms[i].roomtype, "");
 	}
 	
-	PrintRooms(Rooms);
 
 	/* Create all connections in graphs */
-	/*
 	while (IsGraphFull(Rooms) == 0)
 	{
 		AddRandomConnection(Rooms);
 	}
-	*/
-		
-	int result = IsGraphFull(Rooms);
-	printf("IsGraphFull: %d\n",result);
-	
+        
+	AddRoomTypes(Rooms);
+
+	WriteRoomsToFiles(Rooms);	
 }
 
 
-void PrintRooms(struct Room Rooms[]) {
-
-	int i;
-	for (i = 0; i < NUM_ROOMS; i++) {
-		printf("Room #%d\n",i);
-		printf("ROOM NAME: %s\n",Rooms[i].name);
-		printf("CONNECTION 1: %s\n", Rooms[i].con1);
-		printf("CONNECTION 2: %s\n", Rooms[i].con2);
-		printf("CONNECTION 3: %s\n", Rooms[i].con3);
-		printf("CONNECTION 4: %s\n", Rooms[i].con4);
-		printf("CONNECTION 5: %s\n", Rooms[i].con5);
-		printf("CONNECTION 6: %s\n", Rooms[i].con6);
-		printf("\n");
-	
-	}
-	
-
-}
-
-void WriteRoomsToFiles() {
-	/* Create directory and store directory name in dirName */ 
+void WriteRoomsToFiles(struct Room Rooms[]) {
+	/* Create Directory for room files /jonesro4.rooms.PID/ */
 	char dirName[80];
-	CreateDirectory(dirName);
+	int pid = getpid();
+	char pidStr[10];
+	sprintf(pidStr, "%d", pid);
+
+	strcpy(dirName,"jonesro4.rooms.");
+	strcat(dirName, pidStr);
+
+	mkdir(dirName, 0777);
+
 	printf("Directory Name: %s\n",dirName);
 
+	/* Hard-coded array of file names */
 	const char *filenames[7];
 	filenames[0] = "first_room";
 	filenames[1] = "second_room";
@@ -119,6 +102,7 @@ void WriteRoomsToFiles() {
 	filenames[5] = "sixth_room";
 	filenames[6] = "seventh_room";
 
+	/* For each room, print the struct contents to a file */
 	int i;
 	for (i = 0; i < NUM_ROOMS; i++)
 	{
@@ -129,7 +113,16 @@ void WriteRoomsToFiles() {
 		
 		FILE * fp;
 		fp = fopen(filePath, "w");
-		fprintf(fp, "ROOM NAME: \n");
+		fprintf(fp, "ROOM NAME: %s\n", Rooms[i].name);
+		int j;
+		for (j = 0; j < NUM_CONS; j++)
+		{
+			if (strcmp(Rooms[i].connection[j],"") != 0) 
+			{
+				fprintf(fp, "CONNECTION %d: %s\n", j+1, Rooms[i].connection[j]);
+			}
+		}
+		fprintf(fp, "ROOM TYPE: %s\n", Rooms[i].roomtype);
 		fclose(fp);
 
 	}
@@ -138,35 +131,134 @@ void WriteRoomsToFiles() {
 
 
 
-void CreateDirectory(char *directoryName) {
-	
-	/* Create Directory for room files /jonesro4.rooms.PID/ */
-	int pid = getpid();
-	char pidStr[10];
-	sprintf(pidStr, "%d", pid);
+/* Returns true if all rooms have 3 to 6 outbound connections, false otherwise */
+int IsGraphFull(struct Room Rooms[])
+{
+	int i;
+	for (i = 0; i < NUM_ROOMS; i++) {
+		if (strcmp(Rooms[i].connection[0], "") == 0 || 
+			strcmp(Rooms[i].connection[1], "") == 0 || 
+			strcmp(Rooms[i].connection[2], "") == 0) {
+			return 0;
+		}
+	}
+	return 1;	
+}
 
-	strcpy(directoryName,"jonesro4.rooms.");
-	strcat(directoryName, pidStr);
+/* Adds a random, valid outbound connection from a Room to another Room */
+void AddRandomConnection(struct Room Rooms[])
+{
+	int A;
+	int B;
 
-	mkdir(directoryName, 0777);
+	while(1)
+	{
+		A = GetRandomRoom(); 
+
+		if (CanAddConnectionFrom(Rooms, A) == 1)
+			break;
+	}
+
+	do
+	{
+		B = GetRandomRoom(); 
+	}
+	while ( CanAddConnectionFrom(Rooms, B) == 0 || 
+		IsSameRoom(Rooms, A,B) == 1 || 
+		ConnectionAlreadyExists(Rooms, A,B) == 1);
+
+	ConnectRoom(Rooms, A, B);
+
+}
+
+void AddRoomTypes(struct Room Rooms[])
+{
+	int A = GetRandomRoom();
+	int B;
+	strcpy(Rooms[A].roomtype,"START_ROOM");
+	do
+	{
+		B = GetRandomRoom();
+	}
+	while (IsSameRoom(Rooms, A, B) == 1);
+
+	strcpy(Rooms[B].roomtype,"END_ROOM");
+	int i;
+	for (i = 0; i < NUM_ROOMS; i++)
+	{
+		if (i == A || i == B) {
+			continue;
+		}
+		else {
+			strcpy(Rooms[i].roomtype,"MID_ROOM");
+		}
+	}
 
 }
 
 
-/* Returns true if all rooms have 3 to 6 outbound connections, false otherwise */
-int IsGraphFull(struct Room Rooms[])
-{
+int  GetRandomRoom()
+{	
+	int rndRoom = 0;
+	rndRoom = rand() % NUM_ROOMS;
+	return rndRoom;
 	
+}
+
+/* Returns true if a connection can be added from Room x (< 6 outbound connections), false otherwise */
+int CanAddConnectionFrom(struct Room Rooms[], int x)
+{
+	if (strcmp(Rooms[x].connection[5], "") == 0) {
+		return 1;
+	}
+	return 0;
+}
+
+/* Returns true if a connection from Room x to Room y already exists, false otherwise */
+int ConnectionAlreadyExists(struct Room Rooms[], int x, int y)
+{
 	int i;
-	for (i = 0; i < NUM_ROOMS; i++) {
-		if (strcmp(Rooms[i].con1, "") == 0 || 
-			strcmp(Rooms[i].con2, "") == 0 || 
-			strcmp(Rooms[i].con2, "") == 0) {
-			return 0;
+	for (i = 0; i < NUM_CONS; i++) 
+	{
+		if (strcmp(Rooms[x].connection[i], Rooms[y].name) == 0)
+		{
+			return 1;
 		}
 	}
-	
+	return 0;
+}
 
+/* Connects Room x and y together, does not check if this connection is valid */
+void ConnectRoom( struct Room Rooms[], int x, int y )
+{
+	int i = 0;
+	int j = 0;
+	while (strcmp(Rooms[x].connection[i], "") != 0)
+	{
+		i++;
+	}
+	while (strcmp(Rooms[y].connection[j], "") != 0)
+	{
+		j++;
+	}
+
+	strcpy(Rooms[x].connection[i], Rooms[y].name);
+	strcpy(Rooms[y].connection[j], Rooms[x].name);
+}
+
+/* Returns true if Rooms x and y are the same ROom, false otherwise */
+int IsSameRoom( struct Room Rooms[], int x, int y )
+{
+	if (strcmp(Rooms[x].name, Rooms[y].name) == 0 ) {
+		return 1;
+	}
+	return 0;
+}
+
+
+
+
+/* code not used */
 	/* For each file, is there between 3 and 6 outbound connections? */
 	/*
 	DIR* dirToCheck;
@@ -202,55 +294,4 @@ int IsGraphFull(struct Room Rooms[])
 	}
 	return 1;
 	*/
-}
-
-/* Adds a random, valid outbound connection from a Room to another Room */
-void AddRandomConnection()
-{
-	struct Room A;
-	struct Room B;
-
-	while(1)
-	{
-	/*	A = GetRandomRoom(); */
-
-		if (CanAddConnectionFrom(A) == 1)
-			break;
-	}
-
-	do
-	{
-	/*	B = GetRandomRoom(); */
-	}
-	while ( CanAddConnectionFrom(B) == 0 || IsSameRoom(A,B) == 1 || ConnectionAlreadyExists(A,B) == 1);
-
-	ConnectRoom(A,B);
-	ConnectRoom(B,A);
-
-}
-
-
-/* Returns true if a connection can be added from Room x (< 6 outbound connections), false otherwise */
-int CanAddConnectionFrom(struct Room x)
-{
-
-}
-
-/* Returns true if a connection from Room x to Room y already exists, false otherwise */
-int ConnectionAlreadyExists(struct Room x, struct Room y)
-{
-
-}
-
-/* Connects Room x and y together, does not check if this connection is valid */
-void ConnectRoom( struct Room x, struct Room y )
-{
-
-}
-
-/* Returns true if Rooms x and y are the same ROom, false otherwise */
-int IsSameRoom( struct Room x, struct Room y )
-{
-
-}
 

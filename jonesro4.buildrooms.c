@@ -7,26 +7,34 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#define NUM_ROOMS 7
+
 struct Room {
+	char name[9];
+	char con1[9];
+	char con2[9];
+	char con3[9];
+	char con4[9];
+	char con5[9];
+	char con6[9];
+	char roomtype[11];
 };
 
-int IsGraphFull();
+int IsGraphFull(struct Room[]);
 void AddRandomConnection();
 int CanAddConnectionFrom(struct Room x);
 int ConnectionAlreadyExists(struct Room x, struct Room y);
 void ConnectRoom( struct Room x, struct Room y );
 int IsSameRoom( struct Room x, struct Room y );
 void CreateDirectory(char* directoryName);
+void PrintRooms(struct Room[]);
+
 
 int main()
 {
 	srand(time(NULL));
 
-	/* Create directory and store directory name in dirName */ 
-	char dirName[80];
-	CreateDirectory(dirName);
-	printf("Directory Name: %s\n",dirName);
-
+	struct Room Rooms[NUM_ROOMS];
 
 	const char *roomnames[10];
 	roomnames[0] = "NewHaven";
@@ -40,6 +48,68 @@ int main()
 	roomnames[8] = "Crypt";
 	roomnames[9] = "Town";
 
+	/* Randomly set the Room Names */
+	int i, usedRoomNames[10];
+	for (i = 0; i < NUM_ROOMS; i++)
+	{
+		int rndRoomName = 0;
+		rndRoomName = rand() % 10;
+		while (usedRoomNames[rndRoomName] == 1) 
+		{
+			rndRoomName = (rndRoomName + 1) % 10;
+		}
+		usedRoomNames[rndRoomName] = 1;
+		strcpy(Rooms[i].name,roomnames[rndRoomName]);	
+		strcpy(Rooms[i].con1, "");
+		strcpy(Rooms[i].con2, "");
+		strcpy(Rooms[i].con3, "");
+		strcpy(Rooms[i].con4, "");
+		strcpy(Rooms[i].con5, "");
+		strcpy(Rooms[i].con6, "");	
+		strcpy(Rooms[i].roomtype, "");
+	}
+	
+	PrintRooms(Rooms);
+
+	/* Create all connections in graphs */
+	/*
+	while (IsGraphFull(Rooms) == 0)
+	{
+		AddRandomConnection(Rooms);
+	}
+	*/
+		
+	int result = IsGraphFull(Rooms);
+	printf("IsGraphFull: %d\n",result);
+	
+}
+
+
+void PrintRooms(struct Room Rooms[]) {
+
+	int i;
+	for (i = 0; i < NUM_ROOMS; i++) {
+		printf("Room #%d\n",i);
+		printf("ROOM NAME: %s\n",Rooms[i].name);
+		printf("CONNECTION 1: %s\n", Rooms[i].con1);
+		printf("CONNECTION 2: %s\n", Rooms[i].con2);
+		printf("CONNECTION 3: %s\n", Rooms[i].con3);
+		printf("CONNECTION 4: %s\n", Rooms[i].con4);
+		printf("CONNECTION 5: %s\n", Rooms[i].con5);
+		printf("CONNECTION 6: %s\n", Rooms[i].con6);
+		printf("\n");
+	
+	}
+	
+
+}
+
+void WriteRoomsToFiles() {
+	/* Create directory and store directory name in dirName */ 
+	char dirName[80];
+	CreateDirectory(dirName);
+	printf("Directory Name: %s\n",dirName);
+
 	const char *filenames[7];
 	filenames[0] = "first_room";
 	filenames[1] = "second_room";
@@ -49,41 +119,24 @@ int main()
 	filenames[5] = "sixth_room";
 	filenames[6] = "seventh_room";
 
-	int usedRoomNames[10];
-
 	int i;
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < NUM_ROOMS; i++)
 	{
-		int rndRoomName = 0;
-		rndRoomName = rand() % 10;
-		while (usedRoomNames[rndRoomName] == 1) 
-		{
-			rndRoomName = (rndRoomName + 1) % 10;
-		}
-		usedRoomNames[rndRoomName] = 1;
-		
+	
 		char filePath[250];
 		sprintf(filePath, "%s/%s", dirName, filenames[i]);
-		printf("Creating file: %s with room name: %s\n", filePath, roomnames[rndRoomName]);
+		printf("Creating file: %s",filePath);
 		
 		FILE * fp;
 		fp = fopen(filePath, "w");
-		fprintf(fp, "ROOM NAME: %s\n",roomnames[rndRoomName]);
+		fprintf(fp, "ROOM NAME: \n");
 		fclose(fp);
+
 	}
 
-	/* Create all connections in graphs */
-	/*
-	while (IsGraphFull(dirName) == 0)
-	{
-		AddRandomConnection();
-	}
-	*/
-	
-	int result = IsGraphFull(dirName);
-	printf("IsGraphFull: %d\n",result);
-	
 }
+
+
 
 void CreateDirectory(char *directoryName) {
 	
@@ -101,9 +154,21 @@ void CreateDirectory(char *directoryName) {
 
 
 /* Returns true if all rooms have 3 to 6 outbound connections, false otherwise */
-int IsGraphFull(char *directoryName)
+int IsGraphFull(struct Room Rooms[])
 {
+	
+	int i;
+	for (i = 0; i < NUM_ROOMS; i++) {
+		if (strcmp(Rooms[i].con1, "") == 0 || 
+			strcmp(Rooms[i].con2, "") == 0 || 
+			strcmp(Rooms[i].con2, "") == 0) {
+			return 0;
+		}
+	}
+	
+
 	/* For each file, is there between 3 and 6 outbound connections? */
+	/*
 	DIR* dirToCheck;
 	struct dirent *fileInDir;
 	struct stat dirAttributes;
@@ -136,8 +201,7 @@ int IsGraphFull(char *directoryName)
 		}
 	}
 	return 1;
-
-
+	*/
 }
 
 /* Adds a random, valid outbound connection from a Room to another Room */

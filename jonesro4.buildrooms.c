@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 
 struct Room {
 };
@@ -19,6 +20,8 @@ void CreateDirectory(char* directoryName);
 
 int main()
 {
+	srand(time(NULL));
+
 	/* Create directory and store directory name in dirName */ 
 	char dirName[80];
 	CreateDirectory(dirName);
@@ -40,11 +43,30 @@ int main()
 	const char *filenames[7];
 	filenames[0] = "first_room";
 	filenames[1] = "second_room";
-	filenames[3] = "third_room";
-	filenames[4] = "fourth_room";
-	filenames[5] = "fifth_room";
-	filenames[6] = "sixth_room";
-	filenames[7] = "seventh_room";
+	filenames[2] = "third_room";
+	filenames[3] = "fourth_room";
+	filenames[4] = "fifth_room";
+	filenames[5] = "sixth_room";
+	filenames[6] = "seventh_room";
+
+	int usedRoomNames[10];
+
+	int i = 0;
+	for (i = 0; i <= 7; i++)
+	{
+		int rndRoomName = 0;
+		do 
+		{
+			rndRoomName = rand() % 10;
+		} while (usedRoomNames[rndRoomName] != 1)
+		
+		usedRoomNames[rndRoomName] = 1;
+	
+		char filePath[250];
+		sprintf(filePath, "%s\\%s", dirName, filenames[i];
+		printf("Creating file: %s with room name: %s", filePath, roomnames[rndRoomName]);
+		printf("Room Name: %s\n", 
+	}
 
 	/* Create all connections in graphs */
 	/*

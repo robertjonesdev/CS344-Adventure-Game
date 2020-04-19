@@ -11,4 +11,4 @@ jonesro4.buildrooms.o: jonesro4.buildrooms.c
 
 clean:
 	rm jonesro4.buildrooms.o jonesro4.buildrooms
-	rmdir jonesro4.rooms.*
+	rm -r jonesro4.rooms.*

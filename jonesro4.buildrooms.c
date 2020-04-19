@@ -51,21 +51,25 @@ int main()
 
 	int usedRoomNames[10];
 
-	int i = 0;
-	for (i = 0; i <= 7; i++)
+	int i;
+	for (i = 0; i < 7; i++)
 	{
 		int rndRoomName = 0;
-		do 
+		rndRoomName = rand() % 10;
+		while (usedRoomNames[rndRoomName] == 1) 
 		{
-			rndRoomName = rand() % 10;
-		} while (usedRoomNames[rndRoomName] != 1)
-		
+			rndRoomName = (rndRoomName + 1) % 10;
+		}
 		usedRoomNames[rndRoomName] = 1;
-	
+		
 		char filePath[250];
-		sprintf(filePath, "%s\\%s", dirName, filenames[i];
-		printf("Creating file: %s with room name: %s", filePath, roomnames[rndRoomName]);
-		printf("Room Name: %s\n", 
+		sprintf(filePath, "%s/%s", dirName, filenames[i]);
+		printf("Creating file: %s with room name: %s\n", filePath, roomnames[rndRoomName]);
+		
+		FILE * fp;
+		fp = fopen(filePath, "w");
+		fprintf(fp, "ROOM NAME: %s\n",roomnames[rndRoomName]);
+		fclose(fp);
 	}
 
 	/* Create all connections in graphs */
@@ -75,8 +79,10 @@ int main()
 		AddRandomConnection();
 	}
 	*/
+	
 	int result = IsGraphFull(dirName);
 	printf("IsGraphFull: %d\n",result);
+	
 }
 
 void CreateDirectory(char *directoryName) {
@@ -97,42 +103,35 @@ void CreateDirectory(char *directoryName) {
 /* Returns true if all rooms have 3 to 6 outbound connections, false otherwise */
 int IsGraphFull(char *directoryName)
 {
-	/* Is the number of Files = 7? */
+	/* For each file, is there between 3 and 6 outbound connections? */
 	DIR* dirToCheck;
 	struct dirent *fileInDir;
 	struct stat dirAttributes;
 
 	dirToCheck = opendir(directoryName);
 
-	int numFiles = 0;
-	if (dirToCheck > 0)
-	{
-		while((fileInDir = readdir(dirToCheck)) != NULL)
-		{
-			printf("Found the file: %s\n", fileInDir->d_name);
-			stat(fileInDir->d_name, &dirAttributes);
-			numFiles++;
-		}
-		
-	}
-	closedir(dirToCheck);
-	if (numFiles < 9) 
-	{
-		return 0;
-	}
-
-	/* If 7 files, continue to check each file */
-	/* For each file, is there between 3 and 6 outbound connections? */
-	dirToCheck = opendir(directoryName);
 	fileInDir = NULL;
 	if (dirToCheck > 0)
 	{
 		while((fileInDir = readdir(dirToCheck)) != NULL)
 		{
-			if(fileInDir->d_name != "." || fileInDir->d_name != "..")
+			if(strcmp(fileInDir->d_name, ".") != 0 && strcmp(fileInDir->d_name,"..") != 0 )
 			{
-
-
+				char filePath[250];
+				sprintf(filePath, "%s/%s",directoryName, fileInDir->d_name);
+				
+				FILE * fp;
+				fp = fopen(filePath, "r");
+				
+				char line[80];
+				int numConnections = -1;
+				while ( fgets(line, 80, fp) != NULL) {
+					numConnections++;
+				}
+				fclose(fp);
+				if (numConnections < 3) {
+					return 0;
+				}
 			}
 		}
 	}

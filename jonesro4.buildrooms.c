@@ -10,12 +10,15 @@
 #define NUM_ROOMS 7
 #define NUM_CONS 6
 
+
 struct Room {
 	char name[9];
 	char connection[NUM_CONS][9];
 	char roomtype[11];
 };
 
+
+/* Function Definitions */
 int IsGraphFull(struct Room Rooms[]);
 void AddRandomConnection(struct Room Rooms[]);
 void AddRoomTypes(struct Room Rooms[]);
@@ -26,6 +29,8 @@ int IsSameRoom( struct Room Rooms[], int x, int y );
 void CreateDirectory(char* directoryName);
 int GetRandomRoom();
 void WriteRoomsToFiles(struct Room Rooms[]);
+
+
 
 int main()
 {
@@ -75,6 +80,8 @@ int main()
 	AddRoomTypes(Rooms);
 
 	WriteRoomsToFiles(Rooms);	
+
+	return 0;
 }
 
 
@@ -90,7 +97,6 @@ void WriteRoomsToFiles(struct Room Rooms[]) {
 
 	mkdir(dirName, 0777);
 
-	printf("Directory Name: %s\n",dirName);
 
 	/* Hard-coded array of file names */
 	const char *filenames[7];
@@ -109,7 +115,6 @@ void WriteRoomsToFiles(struct Room Rooms[]) {
 	
 		char filePath[250];
 		sprintf(filePath, "%s/%s", dirName, filenames[i]);
-		printf("Creating file: %s",filePath);
 		
 		FILE * fp;
 		fp = fopen(filePath, "w");
@@ -254,44 +259,3 @@ int IsSameRoom( struct Room Rooms[], int x, int y )
 	}
 	return 0;
 }
-
-
-
-
-/* code not used */
-	/* For each file, is there between 3 and 6 outbound connections? */
-	/*
-	DIR* dirToCheck;
-	struct dirent *fileInDir;
-	struct stat dirAttributes;
-
-	dirToCheck = opendir(directoryName);
-
-	fileInDir = NULL;
-	if (dirToCheck > 0)
-	{
-		while((fileInDir = readdir(dirToCheck)) != NULL)
-		{
-			if(strcmp(fileInDir->d_name, ".") != 0 && strcmp(fileInDir->d_name,"..") != 0 )
-			{
-				char filePath[250];
-				sprintf(filePath, "%s/%s",directoryName, fileInDir->d_name);
-				
-				FILE * fp;
-				fp = fopen(filePath, "r");
-				
-				char line[80];
-				int numConnections = -1;
-				while ( fgets(line, 80, fp) != NULL) {
-					numConnections++;
-				}
-				fclose(fp);
-				if (numConnections < 3) {
-					return 0;
-				}
-			}
-		}
-	}
-	return 1;
-	*/
-

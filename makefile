@@ -1,7 +1,7 @@
 all: jonesro4.adventure jonesro4.buildrooms
 
 jonesro4.adventure: jonesro4.adventure.o
-	gcc jonesro4.adventure.o -o jonesro4.adventure -lpthread
+	gcc jonesro4.adventure.o -o jonesro4.adventure -Wall -lpthread
 
 jonesro4.adventure.o: jonesro4.adventure.c
 	gcc -c jonesro4.adventure.c -g

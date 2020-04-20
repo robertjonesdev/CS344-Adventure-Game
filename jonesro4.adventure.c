@@ -19,17 +19,140 @@ struct Room {
 void InitRooms(struct Room Rooms[]);
 void ReadFiles(struct Room Rooms[]);
 void PrintRooms(struct Room Rooms[]);
+int GetStartRoom(struct Room Rooms[]);
+int IsEndRoom(struct Room Rooms[], int X);
+void PrintCurrentRoom(struct Room Rooms[], int currentRoom);
+void StorePath(char **Path, int *strlength, char roomname[9]);
 
 int main()
 {
 	struct Room Rooms[NUM_ROOMS];
-	InitRooms(Rooms);
+	
+	int PathStrLength = 120;
+	char *PathToVictory;
+	PathToVictory = (char *) malloc(PathStrLength);
 
+	memset(PathToVictory, '\0', sizeof(PathToVictory));
+
+	InitRooms(Rooms);
 	ReadFiles(Rooms);
-	PrintRooms(Rooms);
+
+	int currentRoom = GetStartRoom(Rooms);
+	char userInput[80];
+	int stepCounter = 0;
+	while(IsEndRoom(Rooms,currentRoom) != 1)
+	{
+		PrintCurrentRoom(Rooms, currentRoom);
+		printf("WHERE TO? >");
+		scanf("%s", userInput);
+
+		if (strcmp(userInput,"time") == 0) 
+		{
+
+		}
+		else 
+		{
+			
+			int newRoom  = MoveRooms(Rooms, currentRoom, userInput);
+			if (newRoom != currentRoom) 
+			{
+				stepCounter++;
+				currentRoom = newRoom;
+				StorePath(&PathToVictory, &PathStrLength, Rooms[newRoom].name);				
+			}
+		}
+		printf("\n");
+	}
+	printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
+	printf("YOU TOOK %d STEPS. YOUR PATH TO VICTORY WAS:\n", stepCounter);
+	printf("%s", PathToVictory);
+	free(PathToVictory);
+
 	return 0;
 }
 
+
+int GetStartRoom(struct Room Rooms[])
+{
+	int i;
+	for (i = 0; i < NUM_ROOMS; i++)
+	{
+		if (strcmp(Rooms[i].roomtype,"START_ROOM") == 0) 
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+void StorePath(char **Path, int *strlength, char roomname[9])
+{
+
+	int len = strlen(*Path);
+	if (len > (*strlength - 20))
+	{
+		*Path = (char *) realloc(*Path,sizeof(char)*(*strlength *2));
+	
+		*strlength = *strlength * 2;
+	}
+
+	strcat(*Path, roomname);
+	strcat(*Path, "\n");
+}
+
+int MoveRooms(struct Room Rooms[], int currentRoom, char nextRoomName[80])
+{
+	int i;
+	for (i = 0; i < NUM_CONS; i++)
+	{
+		if (strcmp(Rooms[currentRoom].connection[i],nextRoomName) == 0)
+		{
+			int j;
+			for (j = 0; j < NUM_ROOMS; j++)
+			{
+				if (strcmp(Rooms[j].name,nextRoomName) == 0) 
+				{
+					return j;
+				}
+			}
+		}
+	}
+	/* ERROR, Room connection not found! */
+	printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
+	return currentRoom;
+}
+
+void PrintCurrentRoom(struct Room Rooms[], int currentRoom)
+{
+		printf("CURRENT LOCATION: %s\n", Rooms[currentRoom].name);
+		printf("POSSIBLE CONNECTIONS: ");
+		int i;
+		int numConnections = 0;
+		for (i = 0; i < NUM_CONS; i++)
+		{
+			if (strcmp(Rooms[currentRoom].connection[i],"") != 0)
+			{
+				numConnections++;
+				if (numConnections > 1)
+					printf(", ");
+				printf("%s",Rooms[currentRoom].connection[i]);
+			}
+		}
+		printf(".\n");
+
+}
+
+
+int IsEndRoom(struct Room Rooms[], int X)
+{
+	if (strcmp(Rooms[X].roomtype,"END_ROOM") == 0)
+	{
+		return 1;
+	}
+	return 0;
+
+}
 
 void InitRooms(struct Room Rooms[])
 {
@@ -69,7 +192,6 @@ void ReadFiles(struct Room Rooms[])
 			if(strstr(fileInDir->d_name, targetDirPrefix) != NULL)
 			{
 
-        			printf("Found the prefex: %s\n", fileInDir->d_name);
 	        		stat(fileInDir->d_name, &dirAttributes); // Get attributes of the entry
 
 		        	if ((int)dirAttributes.st_mtime > newestDirTime) // If this time is bigger
@@ -77,13 +199,12 @@ void ReadFiles(struct Room Rooms[])
 					newestDirTime = (int)dirAttributes.st_mtime;
 					memset(newestDirName, '\0', sizeof(newestDirName));
 					strcpy(newestDirName, fileInDir->d_name);
-					printf("Newer subdir: %s, new time: %d\n",newestDirName, newestDirTime);
 				}
 			}
 		}
 	}
-
-
+	
+	closedir(dirToCheck);
 	/* Now go to most recently created room directory,
 	 * Read each of the room files and save the room to a Room struct in the provided Rooms array
 	 */
@@ -132,9 +253,10 @@ void ReadFiles(struct Room Rooms[])
 			}
 		}
 	}
+	closedir(dirToCheck);
 }
 
-
+/* For Debug only */
 void PrintRooms(struct Room Rooms[])
 {
 	int i;

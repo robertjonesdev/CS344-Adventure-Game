@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <pthread.h>
+
 
 #define NUM_ROOMS 7
 #define NUM_CONS 6
@@ -16,6 +18,9 @@ struct Room {
 	char roomtype[11];
 };
 
+pthread_mutex_t myMutex = PTHREAD_MUTEX_INITIALIZER;
+int keep_running = 1;
+
 void InitRooms(struct Room Rooms[]);
 void ReadFiles(struct Room Rooms[]);
 void PrintRooms(struct Room Rooms[]);
@@ -23,11 +28,17 @@ int GetStartRoom(struct Room Rooms[]);
 int IsEndRoom(struct Room Rooms[], int X);
 void PrintCurrentRoom(struct Room Rooms[], int currentRoom);
 void StorePath(char **Path, int *strlength, char roomname[9]);
+void * PrintTime();
 
 int main()
 {
 	struct Room Rooms[NUM_ROOMS];
-	
+
+	pthread_mutex_lock(&myMutex);
+	pthread_t time_thread;
+	int result_code = pthread_create(&time_thread, NULL, PrintTime, NULL); 
+
+
 	int PathStrLength = 120;
 	char *PathToVictory;
 	PathToVictory = (char *) malloc(PathStrLength);
@@ -48,7 +59,28 @@ int main()
 
 		if (strcmp(userInput,"time") == 0) 
 		{
+		
+			/* Unlock Mutex so that time can write to file */
+			pthread_mutex_unlock(&myMutex);
+			result_code = pthread_join(time_thread, NULL);
+			pthread_mutex_lock(&myMutex);	
+			
+			/* After PrintTime finishes, lock the mutex, 
+			 * read the time file and print to console */
+			
+			FILE * fptr;
+			fptr = fopen("currentTime.txt","r");
+			char line[80];
+			while ( fgets(line, 80, fptr) != NULL)
+			{
+				printf("\n%s",line);
+			}
 
+			fclose(fptr);
+
+			/* Create a new time thread */
+			result_code = pthread_create(&time_thread, NULL, PrintTime, NULL);
+	
 		}
 		else 
 		{
@@ -67,10 +99,34 @@ int main()
 	printf("YOU TOOK %d STEPS. YOUR PATH TO VICTORY WAS:\n", stepCounter);
 	printf("%s", PathToVictory);
 	free(PathToVictory);
-
+	
+	keep_running = 0;
+	pthread_mutex_unlock(&myMutex);
+	result_code = pthread_join(time_thread, NULL);
+	pthread_mutex_destroy(&myMutex);
 	return 0;
 }
 
+void * PrintTime() 
+{
+	time_t t;
+	struct tm *tmp;
+	char buffer[80];
+
+	pthread_mutex_lock(&myMutex);
+	if (keep_running)
+	{
+		time ( &t );
+		tmp = localtime( &t );
+		strftime(buffer,80,"%l:%M%P, %A, %B %d, %Y", tmp);
+		FILE * fp;
+		fp = fopen("currentTime.txt","w");
+		fprintf(fp, "%s\n",buffer);
+		fclose(fp);
+	} 
+	pthread_mutex_unlock(&myMutex);
+	return NULL;
+}
 
 int GetStartRoom(struct Room Rooms[])
 {
